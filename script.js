@@ -1,109 +1,120 @@
 const load_view = (view, args = {}) => {
-  fetch('/wp-admin/admin-ajax.php?action=load_view&view=' + view +'&'+ new URLSearchParams(args), {method: 'GET'})
-      .then((response) => response.text())
-      .then((response) => (
-          document.getElementById('app').innerHTML = response));
+  const response = await fetch(
+    `/wp-admin/admin-ajax.php?action=load_view&view=${view}&` +
+      new URLSearchParams(args)
+  )
+  const text = await response.text()
+  document.getElementById('app').innerHTML = text
 }
 
-const login = () => {
-  event.preventDefault();
+const login = event => {
+  event.preventDefault()
 
-  const form = document.getElementById('login-form');
-  const error_wrapper = document.getElementById('response-error');
-  const email = form.querySelector('#email');
-  //console.log(email);
+  const form = document.getElementById('login-form')
+  const errorWrapper = document.getElementById('response-error')
+  const email = form.querySelector('#email')
+  const password = form.querySelector('#password')
 
-  const password = form.querySelector('#password');
+  errorWrapper.classList.add('d-none')
 
-  error_wrapper.classList.add('d-none')
+  const requestBody = {
+    email: email.value,
+    password: password.value,
+    action: 'login'
+  }
 
-
-  fetch('/wp-admin/admin-ajax.php?action=login&email=' + email.value + '&password=' + password.value, {method: 'GET'})
-      .then(async (resposnse) => {
-        if(resposnse.status !== 200) {
-          // console.log(await resposnse.text())
-          error_wrapper.classList.remove('d-none')
-          error_wrapper.innerHTML = await resposnse.text()
-          return;
-        }
-
-        load_view('dashboard')
-      })
-  .catch((error) => {
-    console.log(error)
-    error_wrapper.classList.remove('d-none')
-    error_wrapper.innerHTML = error
+  fetch('/wp-admin/admin-ajax.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(requestBody)
   })
+    .then(async resposnse => {
+      if (resposnse.status !== 200) {
+        errorWrapper.classList.remove('d-none')
+        errorWrapper.innerHTML = await resposnse.text()
+        return
+      }
+      load_view('dashboard')
+    })
+    .catch(error => {
+      console.log(error)
+      errorWrapper.classList.remove('d-none')
+      errorWrapper.innerHTML = error
+    })
 }
 
-function deletePost(event, post_id) {
-  event.preventDefault();
-  const error_wrapper = document.getElementById('response-error');
-  error_wrapper.classList.add('d-none')
+function deletePost (event, post_id) {
+  event.preventDefault()
+  const errorWrapper = document.getElementById('response-error')
+  errorWrapper.classList.add('d-none')
 
-  fetch('/wp-admin/admin-ajax.php?action=post_delete&post=' + post_id, {method: 'GET'})
-      .then(async (resposnse) => {
-        if(resposnse.status !== 200) {
-        error_wrapper.classList.remove('d-none')
-          error_wrapper.innerHTML = await resposnse.text()
-          return;
-        }
-
-        load_view('dashboard')
-      })
-      .catch((error) => {
-        console.log(error)
-        error_wrapper.classList.remove('d-none')
-        error_wrapper.innerHTML = error
-      })
+  fetch('/wp-admin/admin-ajax.php?action=post_delete&post=' + post_id, {
+    method: 'GET'
+  })
+    .then(async resposnse => {
+      if (resposnse.status !== 200) {
+        errorWrapper.classList.remove('d-none')
+        errorWrapper.innerHTML = await resposnse.text()
+        return
+      }
+      load_view('dashboard')
+    })
+    .catch(error => {
+      console.log(error)
+      errorWrapper.classList.remove('d-none')
+      errorWrapper.innerHTML = error
+    })
 }
 
-const logout = () => {
-  event.preventDefault();
+const logout = event => {
+  event.preventDefault()
 
-  fetch('/wp-admin/admin-ajax.php?action=logout', {method: 'GET'})
-      .then(async (resposnse) => {
-        if(resposnse.status !== 200) {
-          // console.log(await resposnse.text())
-
-          return;
-        }
-
-        load_view('login')
-      })
-      .catch((error) => {
-        console.log(error)
-
-      })
+  fetch('/wp-admin/admin-ajax.php?action=logout')
+    .then(async resposnse => {
+      if (resposnse.status !== 200) {
+        return
+      }
+      load_view('login')
+    })
+    .catch(error => {
+      console.log(error)
+    })
 }
 
-const insertPost = () => {
-  event.preventDefault();
+const insertPost = event => {
+  event.preventDefault()
 
-  const form = document.getElementById('edit-form');
-  const from_data = new FormData(form)
-  //console.log(email);
+  const form = document.getElementById('edit-form')
+  const formData = new FormData(form)
 
-  const password = form.querySelector('#password');
+  const errorWrapper = document.getElementById('response-error')
+  errorWrapper.classList.add('d-none')
 
-  const error_wrapper = document.getElementById('response-error');
-  error_wrapper.classList.add('d-none')
+  const requestData = {
+    ...Object.fromEntries(formData),
+    action: 'post_insert'
+  }
 
-
-  fetch('/wp-admin/admin-ajax.php?action=post_insert&post=' + JSON.stringify(Object.fromEntries(from_data)), {method: 'GET'})
-      .then(async (resposnse) => {
-        if(resposnse.status !== 200) {
-          // console.log(await resposnse.text())
-          error_wrapper.classList.remove('d-none')
-          error_wrapper.innerHTML = await resposnse.text()
-          return;
-        }
-
-        load_view('dashboard')
-      })
-      .catch((error) => {
-        console.log(error)
-        error_wrapper.classList.remove('d-none')
-        error_wrapper.innerHTML = error
-      })
+  fetch('/wp-admin/admin-ajax.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(requestData)
+  })
+    .then(async resposnse => {
+      if (resposnse.status !== 200) {
+        errorWrapper.classList.remove('d-none')
+        errorWrapper.innerHTML = await resposnse.text()
+        return
+      }
+      load_view('dashboard')
+    })
+    .catch(error => {
+      console.log(error)
+      errorWrapper.classList.remove('d-none')
+      errorWrapper.innerHTML = error
+    })
 }

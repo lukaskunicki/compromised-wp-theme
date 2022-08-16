@@ -13,7 +13,7 @@
  * 3. Potential performance issues.
  */
 
-add_filter( 'show_admin_bar', '__return_false' );
+add_filter('show_admin_bar', '__return_false');
 
 add_action('wp_ajax_nopriv_load_view', 'load_view');
 add_action('wp_ajax_load_view', 'load_view');
@@ -27,26 +27,28 @@ function load_view(): void
 add_action('wp_ajax_nopriv_login', 'login');
 add_action('wp_ajax_login', 'login');
 
+function dieWithMessage(string $message)
+{
+    echo $message;
+    http_response_code(400);
+    die;
+}
+
 function login(): void
 {
-    $email = $_GET['email'];
-    $password = $_GET['password'];
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    if ($email) {
-        if ($password) {
-            $user = wp_signon(['user_login' => $email, 'user_password' => $password]);
-            if (is_wp_error($user)) {
-                echo $user->get_error_message();
-                http_response_code(400);
-                die;
-            }
-        }else {
-            echo 'Missing password!';
-            http_response_code(400);
-            die;
-        }
-    } else {
-        echo 'Missing email!';
+    if ($email === '') {
+        exitWithMessage('Missing email!');
+    }
+    if ($password === '') {
+        exitWithMessage('Missing password!');
+    }
+
+    $user = wp_signon(['user_login' => $email, 'user_password' => $password]);
+    if (is_wp_error($user)) {
+        echo $user->get_error_message();
         http_response_code(400);
         die;
     }
@@ -60,21 +62,18 @@ add_action('wp_ajax_post_delete', 'post_delete');
 
 function post_delete(): void
 {
-    $post_id = $_GET['post'];
+    if (!is_user_logged_in()) {
+        dieWithMessage('Unauthorized access!');
+    }
+    $post_id = $_GET['post'] ?? 0;
 
-    if ($post_id) {
-        $delete = wp_delete_post($post_id);
+    if (0 === $post_id) {
+        dieWithMessage('Invalid post data');
+    }
 
-            if (!$delete) {
-                echo 'Post cannot be delted';
-                http_response_code(400);
-                die;
-            }
-
-    } else {
-        echo 'Invalid post id!';
-        http_response_code(400);
-        die;
+    $delete = wp_delete_post($post_id);
+    if (!$delete) {
+        dieWithMessage('Post cannot be deleted');
     }
 
     http_response_code(200);
@@ -86,6 +85,10 @@ add_action('wp_ajax_post_insert', 'post_insert');
 
 function post_insert(): void
 {
+    if (!is_user_logged_in()) {
+        dieWithMessage('Unauthorized access!');
+    }
+
     $post = json_decode(stripslashes($_GET['post']), true);
     $post = filter_var_array($post);
 
@@ -97,7 +100,6 @@ function post_insert(): void
             http_response_code(400);
             die;
         }
-
     } else {
         echo 'Invalid post!';
         http_response_code(400);
@@ -114,7 +116,6 @@ add_action('wp_ajax_logout', 'logout');
 function logout(): void
 {
     wp_logout();
-
     http_response_code(200);
     die;
 }

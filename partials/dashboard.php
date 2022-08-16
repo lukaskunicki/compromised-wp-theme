@@ -31,11 +31,8 @@
             'paged' => $_GET['page'] ?? 1
         ]);
 
-        foreach ($posts->get_posts() as $post) {
-
-            $author = get_user_by('ID', $post->post_author);
-            ?>
-
+            foreach ($posts->get_posts() as $post) {
+                $author = get_user_by('ID', $post->post_author); ?>
             <tr>
                 <th scope="row"><?php echo $post->ID ?></th>
                 <td><?= $post->post_title ?></td>
@@ -44,26 +41,23 @@
                 <td class="gap-10">
                     <button onclick="load_view('edit', {post: <?= $post->ID ?>})" type="button"
                             class="btn btn-secondary">Edit</button>
-                    <button onclick="deletePost(event, <?= $post->ID ?>)" type="button"
+                    <button onclick="deletePost(this, <?= $post->ID ?>)" type="button"
                             class="btn btn-danger">Delete</button>
                 </td>
             </tr>
-        <?php }
-        ?>
+        <?php
+            }
+            ?>
         </tbody>
     </table>
 
     <?php
-    $max_posts = new WP_Query([
-        'post_type' => 'post',
-        'posts_per_page' => -1,
-    ]);
-
-    ?>
+    $max_posts = wp_count_posts();
+            ?>
 
     <nav aria-label="Page navigation example">
         <ul class="pagination">
-            <?php foreach (range(1, ceil(count($max_posts->posts) / 3)) as $item): ?>
+            <?php foreach (range(1, ceil($max_posts / 3)) as $item): ?>
                 <li class="page-item <?= ($_GET['page'] ?? 1) == $item ? 'active' : '' ?>">
                     <button class="page-link" onclick="load_view('dashboard', {page: <?= $item?>})">
                         <?= $item ?>
